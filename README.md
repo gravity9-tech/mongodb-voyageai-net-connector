@@ -1,51 +1,16 @@
 # Gravity9.MongoDb.VoyageAiEmbeddingGenerator
 
-A .NET library that implements `IEmbeddingGenerator<string, Embedding<float>>` using the VoyageAI embedding models through MongoDB Atlas AI API. This library integrates seamlessly with Microsoft.Extensions.AI abstractions, Microsoft Agent Framework, and Semantic Kernel's MongoDB vector store connector.
+A .NET library that implements `IEmbeddingGenerator<string, Embedding<float>>` using the [VoyageAI](https://www.mongodb.com/docs/api/doc/atlas-embedding-and-reranking-api/) embedding models through MongoDB Atlas AI API. This library integrates seamlessly with [Microsoft.Extensions.AI](https://learn.microsoft.com/en-us/dotnet/ai/microsoft-extensions-ai) abstractions, Microsoft Agent Framework, and Semantic Kernel's MongoDB vector store connector.
 
 [![NuGet](https://img.shields.io/nuget/v/Gravity9.MongoDb.VoyageAiEmbeddingGenerator.svg)](https://www.nuget.org/packages/Gravity9.MongoDb.VoyageAiEmbeddingGenerator/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## Overview
 
-This library provides VoyageAI embedding generation capabilities through the Microsoft.Extensions.AI abstractions, making it compatible with:
+This library provides MongoDB Atlas VoyageAI embedding generation capabilities through the Microsoft.Extensions.AI abstractions, making it compatible with:
 - **Microsoft Agent Framework** - Build AI agents that leverage VoyageAI embeddings
 - **Semantic Kernel** - Integrate with Semantic Kernel's MongoDB vector store connector
 - **Any framework using Microsoft.Extensions.AI** - Works with any library that consumes the standard `IEmbeddingGenerator` interface
-
-### About Atlas Embedding and Reranking API
-
-The [Atlas Embedding and Reranking API](https://www.mongodb.com/docs/api/doc/atlas-embedding-and-reranking-api/) provides programmatic access to the latest Voyage AI embedding and reranking models through a RESTful interface. This API allows you to generate high-quality embeddings for text data, enabling powerful semantic search and similarity matching capabilities within MongoDB Atlas.
-
-**Key Benefits:**
-- Access to state-of-the-art Voyage AI models (voyage-4-large, voyage-4, voyage-4-lite, and more)
-- Seamless integration with MongoDB Atlas Vector Search
-- Support for different input types (documents vs queries) for optimized results
-- Flexible output dimensions and encoding formats
-- Built-in rate limiting and authentication
-
-Learn more: [MongoDB Atlas Embedding and Reranking API Documentation](https://www.mongodb.com/docs/atlas/atlas-vector-search/ai-integrations/voyage/)
-
-### About Microsoft.Extensions.AI.Abstractions
-
-[Microsoft.Extensions.AI.Abstractions](https://devblogs.microsoft.com/dotnet/introducing-microsoft-extensions-ai-preview/) is a unified set of APIs for integrating AI services into .NET applications. It provides standardized interfaces that enable developers to write AI-powered code that works across different AI providers without vendor lock-in.
-
-**Key Interfaces:**
-- `IEmbeddingGenerator<TInput, TEmbedding>` - Generate embeddings from text or other inputs
-- `IChatClient` - Interact with chat-based AI models
-- `ITextGenerator` - Generate text completions
-
-**Benefits:**
-- **Provider Agnostic** - Write code once, swap providers easily
-- **Dependency Injection Ready** - Built for modern .NET DI patterns
-- **Extensible** - Add middleware, logging, caching, and more
-- **Type Safe** - Strongly typed interfaces for better developer experience
-
-This library implements the `IEmbeddingGenerator<string, Embedding<float>>` interface, making it compatible with any .NET application that uses Microsoft.Extensions.AI abstractions.
-
-Learn more: 
-- [Microsoft.Extensions.AI Announcement](https://devblogs.microsoft.com/dotnet/introducing-microsoft-extensions-ai-preview/)
-- [Microsoft.Extensions.AI on NuGet](https://www.nuget.org/packages/Microsoft.Extensions.AI.Abstractions/)
-- [Microsoft.Extensions.AI GitHub](https://github.com/dotnet/extensions/tree/main/src/Libraries/Microsoft.Extensions.AI.Abstractions)
 
 ## Features
 
@@ -359,20 +324,39 @@ The sample demonstrates a product catalog with semantic search capabilities, sho
 - Filter results by price while maintaining semantic relevance
 - Retrieve individual products with their embeddings
 
+## About Atlas Embedding and Reranking API
+
+The [Atlas Embedding and Reranking API](https://www.mongodb.com/docs/api/doc/atlas-embedding-and-reranking-api/) provides programmatic access to the latest Voyage AI embedding and reranking models through a RESTful interface. This API allows you to generate high-quality embeddings for text data, enabling powerful semantic search and similarity matching capabilities within MongoDB Atlas.
+
+**Key Benefits:**
+- Access to state-of-the-art Voyage AI models (voyage-4-large, voyage-4, voyage-4-lite, and more)
+- Seamless integration with MongoDB Atlas Vector Search
+- Support for different input types (documents vs queries) for optimized results
+- Flexible output dimensions and encoding formats
+- Built-in rate limiting and authentication
+
+Learn more: [MongoDB Atlas Embedding and Reranking API Documentation](https://www.mongodb.com/docs/atlas/atlas-vector-search/ai-integrations/voyage/)
+
+## About Microsoft.Extensions.AI.Abstractions
+
+[Microsoft.Extensions.AI.Abstractions](https://devblogs.microsoft.com/dotnet/introducing-microsoft-extensions-ai-preview/) is a unified set of APIs for integrating AI services into .NET applications. It provides standardized interfaces that enable developers to write AI-powered code that works across different AI providers without vendor lock-in.
+
+**Key Interfaces:**
+- `IEmbeddingGenerator<TInput, TEmbedding>` - Generate embeddings from text or other inputs
+- `IChatClient` - Interact with chat-based AI models
+- `ITextGenerator` - Generate text completions
+
+**Benefits:**
+- **Provider Agnostic** - Write code once, swap providers easily
+- **Dependency Injection Ready** - Built for modern .NET DI patterns
+- **Extensible** - Add middleware, logging, caching, and more
+- **Type Safe** - Strongly typed interfaces for better developer experience
+
+This library implements the `IEmbeddingGenerator<string, Embedding<float>>` interface, making it compatible with any .NET application that uses Microsoft.Extensions.AI abstractions.
+
+Learn more: 
+- [Microsoft.Extensions.AI Announcement](https://devblogs.microsoft.com/dotnet/introducing-microsoft-extensions-ai-preview/)
+- [Microsoft.Extensions.AI on NuGet](https://www.nuget.org/packages/Microsoft.Extensions.AI.Abstractions/)
+- [Microsoft.Extensions.AI GitHub](https://github.com/dotnet/extensions/tree/main/src/Libraries/Microsoft.Extensions.AI.Abstractions)
+
 ## Documentation
-
-- [USAGE.md](./USAGE.md) - Detailed usage guide and best practices
-- [samples/ConsoleApp](./samples/ConsoleApp) - Complete working example with product catalog search
-- [VoyageAI Documentation](http://dochub.mongodb.org/core/voyage-landing)
-- [Microsoft Agent Framework](https://learn.microsoft.com/en-us/dotnet/ai/conceptual/agents)
-- [Semantic Kernel Docs](https://learn.microsoft.com/en-us/semantic-kernel/)
-- [MongoDB Vector Search](https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-overview/)
-- [Microsoft.Extensions.AI](https://devblogs.microsoft.com/dotnet/introducing-microsoft-extensions-ai-preview/)
-
-## License
-
-Apache 2.0
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
