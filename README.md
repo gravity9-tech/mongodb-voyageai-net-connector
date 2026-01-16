@@ -1,24 +1,33 @@
 # Gravity9.MongoDb.VoyageAiEmbeddingGenerator
 
-A .NET 10 library that implements the `IEmbeddingGenerator` abstraction from [Microsoft.Extensions.AI](https://www.nuget.org/packages/Microsoft.Extensions.AI.Abstractions/) to generate embeddings using the VoyageAI/MongoDB Atlas Embedding API.
+A .NET library that implements `IEmbeddingGenerator<string, Embedding<float>>` using the VoyageAI embedding models through MongoDB Atlas AI API. This library integrates seamlessly with Microsoft.Extensions.AI abstractions and Semantic Kernel's MongoDB vector store connector.
 
-This library is designed to work seamlessly with [Semantic Kernel](https://learn.microsoft.com/en-us/semantic-kernel/) MongoDB vector store implementations, providing easy integration with VoyageAI's state-of-the-art embedding models.
+[![NuGet](https://img.shields.io/nuget/v/Gravity9.MongoDb.VoyageAiEmbeddingGenerator.svg)](https://www.nuget.org/packages/Gravity9.MongoDb.VoyageAiEmbeddingGenerator/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Features
 
-- ✅ Full implementation of `IEmbeddingGenerator<string, Embedding<float>>`
-- ✅ Support for all VoyageAI embedding models (voyage-4-large, voyage-4, voyage-4-lite, voyage-code-3, etc.)
-- ✅ Automatic retry logic with configurable delays
-- ✅ Comprehensive error handling
-- ✅ Dependency injection support via `IServiceCollection` extensions
-- ✅ Compatible with Semantic Kernel MongoDB vector store
-- ✅ Configurable model parameters (dimensions, truncation, input type)
-- ✅ Thread-safe and async-first design
+- ✅ **MongoDB Atlas AI Integration** - Uses VoyageAI models through MongoDB Atlas AI API (`https://ai.mongodb.com/v1`)
+- ✅ **Microsoft.Extensions.AI Compatible** - Implements standard `IEmbeddingGenerator<string, Embedding<float>>` interface
+- ✅ **Semantic Kernel Ready** - Works seamlessly with Semantic Kernel's MongoDB vector store connector
+- ✅ **Dependency Injection Support** - Easy integration with Microsoft.Extensions.DependencyInjection
+- ✅ **Automatic Retry Logic** - Handles transient failures with configurable retry policies
+- ✅ **Multiple Model Support** - Access to voyage-4-large, voyage-4-lite, voyage-code-3, and more
+- ✅ **Flexible Configuration** - Support for different input types, output dimensions, and encoding formats
+- ✅ **Token Usage Tracking** - Monitor API usage through response metadata
 
 ## Installation
 
+Install via NuGet Package Manager:
+
 ```bash
 dotnet add package Gravity9.MongoDb.VoyageAiEmbeddingGenerator
+```
+
+Or via Package Manager Console:
+
+```powershell
+Install-Package Gravity9.MongoDb.VoyageAiEmbeddingGenerator
 ```
 
 ## Quick Start
@@ -27,21 +36,23 @@ dotnet add package Gravity9.MongoDb.VoyageAiEmbeddingGenerator
 
 ```csharp
 using Gravity9.MongoDb.VoyageAiEmbeddingGenerator;
-using Microsoft.Extensions.AI;
 
-// Create the embedding generator
-var generator = new VoyageAiEmbeddingGenerator("your-voyage-api-key");
+// Create generator with API key
+var generator = new VoyageAiEmbeddingGenerator("your-mongodb-atlas-api-key");
 
-// Generate embeddings for text
-var embeddings = await generator.GenerateAsync(new[] { "Hello, world!", "Semantic Kernel is awesome!" });
+// Generate embeddings
+var texts = new[] { "Hello, world!", "Semantic search is powerful" };
+var result = await generator.GenerateAsync(texts);
 
-foreach (var embedding in embeddings)
+// Access embeddings
+foreach (var embedding in result)
 {
-    Console.WriteLine($"Generated embedding with {embedding.Vector.Length} dimensions");
+    Console.WriteLine($"Embedding dimensions: {embedding.Vector.Length}");
+    // Process embedding vector...
 }
 ```
 
-### Using with Dependency Injection
+### With Dependency Injection
 
 ```csharp
 using Gravity9.MongoDb.VoyageAiEmbeddingGenerator;
@@ -51,7 +62,7 @@ var services = new ServiceCollection();
 
 // Register the embedding generator
 services.AddVoyageAiEmbeddingGenerator(
-    apiKey: "your-voyage-api-key",
+    apiKey: "your-mongodb-atlas-api-key",
     configureOptions: options =>
     {
         options.Model = "voyage-4-large";
@@ -61,241 +72,210 @@ services.AddVoyageAiEmbeddingGenerator(
 
 var serviceProvider = services.BuildServiceProvider();
 
-// Resolve and use the generator
+// Resolve and use
 var generator = serviceProvider.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
-var embeddings = await generator.GenerateAsync(new[] { "Document text to embed" });
+var embeddings = await generator.GenerateAsync(new[] { "Sample text" });
 ```
 
-### Integration with Semantic Kernel MongoDB Vector Store
+### With Semantic Kernel MongoDB Vector Store
 
 ```csharp
-using Microsoft.SemanticKernel.Connectors.MongoDB;
-using Microsoft.Extensions.VectorData;
+using ConsoleApp;
 using Gravity9.MongoDb.VoyageAiEmbeddingGenerator;
+using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.VectorData;
+using Microsoft.SemanticKernel.Connectors.MongoDB;
 using MongoDB.Driver;
 
-// Create the embedding generator
-var embeddingGenerator = new VoyageAiEmbeddingGenerator(new VoyageAiEmbeddingGeneratorOptions
-{
-    ApiKey = "your-voyage-api-key",
-    Model = "voyage-4-large",
-    InputType = "document"
-});
+// Setup services
+var services = new ServiceCollection();
 
-// Create MongoDB client and database
-var mongoClient = new MongoClient("mongodb://localhost:27017");
-var database = mongoClient.GetDatabase("vectordb");
+// Register MongoDB
+services.AddSingleton<IMongoClient>(new MongoClient("mongodb://localhost:27017"));
+services.AddSingleton(sp => sp.GetRequiredService<IMongoClient>().GetDatabase("vectordb"));
 
-// Create the collection with embedding generator
+// Register VoyageAI Embedding Generator
+services.AddVoyageAiEmbeddingGenerator(
+    apiKey: "your-mongodb-atlas-api-key",
+    configureOptions: options =>
+    {
+        options.Model = "voyage-4-large";
+        options.InputType = "document";
+        options.OutputDimension = 1024;
+    });
+
+var serviceProvider = services.BuildServiceProvider();
+
+// Get services
+var database = serviceProvider.GetRequiredService<IMongoDatabase>();
+var embeddingGenerator = serviceProvider.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
+
+// Create vector store collection
 var collectionOptions = new MongoCollectionOptions
 {
-    EmbeddingGenerator = embeddingGenerator,
-    VectorIndexName = "vector_index",
-    Definition = VectorStoreRecordDefinition.FromType<MyDataModel>()
+    EmbeddingGenerator = embeddingGenerator, // Enables automatic embedding generation
+    VectorIndexName = "product_vector_index"
 };
 
-var collection = new MongoCollection<string, MyDataModel>(
+var collection = new MongoCollection<string, ProductRecord>(
     database,
-    "my_collection",
+    "products",
     collectionOptions);
 
-// Ensure collection and indexes exist
+// Ensure collection exists
 await collection.EnsureCollectionExistsAsync();
 
-// Add records - embeddings will be generated automatically
-var record = new MyDataModel
+// Create and insert a product
+var product = new ProductRecord
 {
-    Id = "1",
-    Text = "This text will be automatically embedded",
-    Description = "Additional metadata"
+    Id = "prod-001",
+    Name = "Sony WH-1000XM5",
+    Description = "Premium wireless noise-cancelling headphones with exceptional sound quality."
 };
 
-await collection.UpsertAsync(record);
+// Embeddings are generated automatically during upsert!
+// (because DescriptionEmbedding property returns Description text)
+await collection.UpsertAsync(product);
 
-// Perform vector search
-var searchResults = collection.SearchAsync(
-    "search query",
-    top: 10,
-    new VectorSearchOptions<MyDataModel>
-    {
-        VectorProperty = nameof(MyDataModel.Embedding)
-    });
+// Perform semantic search (EmbeddingGenerator automatically converts query to vector)
+var searchResults = collection.SearchAsync("noise cancelling headphones", top: 5);
 
 await foreach (var result in searchResults)
 {
-    Console.WriteLine($"Found: {result.Record.Text}, Score: {result.Score}");
+    Console.WriteLine($"{result.Record.Name} - Score: {result.Score}");
+}
+```
+
+**ProductRecord Model:**
+
+```csharp
+public class ProductRecord
+{
+    [VectorStoreKey]
+    public string Id { get; set; } = string.Empty;
+
+    [VectorStoreData]
+    public string Description { get; set; } = string.Empty;
+
+    // Vector property must be a string that returns the source text
+    // This enables automatic embedding generation during upsert
+    [VectorStoreVector(Dimensions: 1024, DistanceFunction = DistanceFunction.CosineSimilarity, IndexKind = IndexKind.Hnsw)]
+    public string? DescriptionEmbedding => Description;
 }
 ```
 
 ## Configuration Options
 
-The `VoyageAiEmbeddingGeneratorOptions` class provides comprehensive configuration:
+### VoyageAiEmbeddingGeneratorOptions
 
 ```csharp
-var options = new VoyageAiEmbeddingGeneratorOptions
+public class VoyageAiEmbeddingGeneratorOptions
 {
-    // Required: Your VoyageAI API key
-    ApiKey = "your-voyage-api-key",
-
-    // Optional: Base URL for the API (default: https://ai.mongodb.com/v1)
-    BaseUrl = "https://ai.mongodb.com/v1",
-
-    // Optional: Model to use (default: voyage-4-large)
-    Model = "voyage-4-large",
-
-    // Optional: Input type for optimization (null, "query", or "document")
-    InputType = "document",
-
-    // Optional: Enable truncation for long texts (default: true)
-    Truncation = true,
-
-    // Optional: Output dimensions (256, 512, 1024, or 2048)
-    OutputDimension = 1024,
-
-    // Optional: Output data type (default: "float")
-    OutputDtype = "float",
-
-    // Optional: Encoding format (null or "base64")
-    EncodingFormat = null,
-
-    // Optional: Request timeout (default: 30 seconds)
-    RequestTimeout = TimeSpan.FromSeconds(30),
-
-    // Optional: Max retries for transient failures (default: 3)
-    MaxRetries = 3,
-
-    // Optional: Delay between retries in milliseconds (default: 1000)
-    RetryDelayMilliseconds = 1000
-};
-
-var generator = new VoyageAiEmbeddingGenerator(options);
+    // API Configuration
+    public string? ApiKey { get; set; }                    // Required: Your MongoDB Atlas API key
+    public string BaseUrl { get; set; }                    // Default: https://ai.mongodb.com/v1
+    
+    // Model Configuration
+    public string Model { get; set; }                      // Default: voyage-4-large
+    public string? InputType { get; set; }                 // "query" or "document" for optimization
+    
+    // Output Configuration
+    public int? OutputDimension { get; set; }              // 256, 512, 1024, or 2048
+    public string OutputDtype { get; set; }                // Default: float
+    public string? EncodingFormat { get; set; }            // null (arrays) or "base64"
+    public bool Truncation { get; set; }                   // Default: true
+    
+    // HTTP Configuration
+    public TimeSpan RequestTimeout { get; set; }           // Default: 30 seconds
+    public int MaxRetries { get; set; }                    // Default: 3
+    public int RetryDelayMilliseconds { get; set; }        // Default: 1000
+}
 ```
 
-## Supported VoyageAI Models
+## Available Models
 
-The library supports all VoyageAI embedding models available through MongoDB Atlas:
+### MongoDB Atlas AI Models
 
-- **voyage-4-large** (Recommended) - Highest quality, 1024 dimensions default
-- **voyage-4** - Balanced quality and performance
-- **voyage-4-lite** - Fast and efficient
-- **voyage-3-large** - Previous generation, high quality
-- **voyage-3.5** - Enhanced version of v3
-- **voyage-3.5-lite** - Lightweight v3.5
-- **voyage-code-3** - Specialized for code embeddings
+- **voyage-4-large** - Best performance, highest accuracy (default)
+- **voyage-4** - Standard latest model
+- **voyage-4-lite** - Faster, lower cost
+- **voyage-3-large** - Previous generation large model
+- **voyage-3.5** - Previous generation standard model
+- **voyage-code-3** - Optimized for code embeddings
 - **voyage-finance-2** - Optimized for financial documents
 - **voyage-law-2** - Optimized for legal documents
-- **voyage-2** - Legacy model
 - **voyage-multimodal-3** - Multimodal support (images + text)
 
-## Advanced Features
+### Direct VoyageAI API Models
 
-### Batch Processing
+If using direct VoyageAI API (`https://api.voyageai.com/v1`):
+- **voyage-3** - Latest standard
+- **voyage-3-lite** - Faster, lower cost
+- **voyage-code-3** - Optimized for code
 
-The library automatically handles batch processing and respects API limits:
+## API Endpoints
 
+### MongoDB Atlas AI (Default)
+- **Base URL**: `https://ai.mongodb.com/v1`
+- **Authentication**: Bearer token (Model API Key from MongoDB Atlas)
+- **Get API Key**: MongoDB Atlas → Model API Keys section
+- **Models**: voyage-4-large, voyage-4, voyage-4-lite, voyage-3-large, etc.
+
+### Direct VoyageAI API (Alternative)
+- **Base URL**: `https://api.voyageai.com/v1`
+- **Authentication**: Bearer token (VoyageAI API key)
+- **Get API Key**: VoyageAI website
+- **Models**: voyage-3, voyage-3-lite, voyage-code-3
+
+To use direct VoyageAI API:
 ```csharp
-var generator = new VoyageAiEmbeddingGenerator("your-api-key");
-
-var largeBatch = Enumerable.Range(0, 500)
-    .Select(i => $"Document {i}")
-    .ToList();
-
-var embeddings = await generator.GenerateAsync(largeBatch);
-// Returns 500 embeddings
+options.BaseUrl = "https://api.voyageai.com/v1";
+options.Model = "voyage-3";
 ```
 
-### Error Handling
+## Important Notes
 
-The library includes comprehensive error handling with automatic retries for transient failures:
+### Automatic Embedding Generation
 
-```csharp
-try
-{
-    var embeddings = await generator.GenerateAsync(new[] { "Text to embed" });
-}
-catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-{
-    // Rate limit exceeded - already retried automatically
-    Console.WriteLine("Rate limit exceeded after retries");
-}
-catch (HttpRequestException ex)
-{
-    // Other API errors
-    Console.WriteLine($"API error: {ex.Message}");
-}
-```
+**The Semantic Kernel MongoDB connector CAN automatically generate embeddings during `UpsertAsync` when configured correctly!**
 
-### Usage Tracking
-
-Access token usage information from the response:
+The key is that the vector property must be of type `string` (or `string?`) and return the source text to embed:
 
 ```csharp
-var embeddings = await generator.GenerateAsync(new[] { "Sample text" });
-
-if (embeddings.Usage != null)
+public class ProductRecord
 {
-    Console.WriteLine($"Tokens used: {embeddings.Usage.InputTokenCount}");
-    Console.WriteLine($"Total tokens: {embeddings.Usage.TotalTokenCount}");
+    [VectorStoreData]
+    public string Description { get; set; } = string.Empty;
+
+    // ✅ CORRECT: String property that returns source text - enables automatic embedding
+    [VectorStoreVector(Dimensions: 1024, DistanceFunction = DistanceFunction.CosineSimilarity)]
+    public string? DescriptionEmbedding => Description;
 }
+
+// With EmbeddingGenerator configured, this will automatically generate embeddings
+await collection.UpsertAsync(product);
 ```
 
-## API Reference
+How it works:
+1. The MongoDB connector reads the string value from `DescriptionEmbedding` (which returns `Description`)
+2. It passes this string to the configured `IEmbeddingGenerator`
+3. The generator creates the vector embedding
+4. The vector is stored in MongoDB
 
-### VoyageAiEmbeddingGenerator
+**Note:** If you use `ReadOnlyMemory<float>?` as the property type, you must manually generate embeddings before upserting:
 
-Main class implementing `IEmbeddingGenerator<string, Embedding<float>>`.
+```csharp
+// ❌ With ReadOnlyMemory<float>? - requires manual embedding generation
+[VectorStoreVector(Dimensions: 1024, DistanceFunction = DistanceFunction.CosineSimilarity)]
+public ReadOnlyMemory<float>? DescriptionEmbedding { get; set; }
 
-#### Constructors
+// Must generate manually
+var embeddingResult = await embeddingGenerator.GenerateAsync([product.Description]);
+product.DescriptionEmbedding = embeddingResult[0].Vector;
+await collection.UpsertAsync(product);
+```
 
-- `VoyageAiEmbeddingGenerator(string apiKey)` - Simple constructor with API key
-- `VoyageAiEmbeddingGenerator(VoyageAiEmbeddingGeneratorOptions options)` - Constructor with full options
-- `VoyageAiEmbeddingGenerator(IVoyageAiApiClient apiClient, VoyageAiEmbeddingGeneratorOptions options)` - For advanced scenarios with custom API client
-
-#### Methods
-
-- `Task<GeneratedEmbeddings<Embedding<float>>> GenerateAsync(IEnumerable<string> values, EmbeddingGenerationOptions? options = null, CancellationToken cancellationToken = default)` - Generate embeddings for the provided text inputs
-
-### ServiceCollectionExtensions
-
-Extension methods for dependency injection.
-
-- `AddVoyageAiEmbeddingGenerator(string apiKey, Action<VoyageAiEmbeddingGeneratorOptions>? configureOptions = null)` - Register with DI container
-- `AddVoyageAiEmbeddingGenerator(VoyageAiEmbeddingGeneratorOptions options)` - Register with pre-configured options
-
-## Requirements
-
-- .NET 10.0 or later
-- MongoDB.Driver (for MongoDB integration)
-- Microsoft.Extensions.AI.Abstractions
-- Valid VoyageAI API key (obtain from MongoDB Atlas)
-
-## Getting a VoyageAI API Key
-
-1. Sign in to [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
-2. Navigate to the **Model API Keys** section
-3. Create a new API key for VoyageAI embedding services
-4. Copy the API key and use it in your application
-
-For more information, see [MongoDB's documentation on Model API Keys](http://dochub.mongodb.org/core/voyage-api-keys).
-
-## License
-
-MIT
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## Support
-
-For issues, questions, or suggestions, please open an issue on GitHub.
-
-## Related Projects
-
-- [Semantic Kernel](https://github.com/microsoft/semantic-kernel) - Microsoft's AI orchestration framework
-- [Microsoft.Extensions.AI](https://www.nuget.org/packages/Microsoft.Extensions.AI.Abstractions/) - AI abstraction interfaces
-- [MongoDB .NET Driver](https://github.com/mongodb/mongo-csharp-driver) - Official MongoDB driver for .NET
-
-## Acknowledgments
-
-This library is built on top of the VoyageAI embedding models provided through MongoDB Atlas and follows the abstractions defined by Microsoft.Extensions.AI.
+The `EmbeddingGenerator` property in `MongoCollectionOptions` is used for:
+- **Automatic embedding during upsert** (when vector property is string type)
+- **Search-time query embedding** (converting search queries to vectors)

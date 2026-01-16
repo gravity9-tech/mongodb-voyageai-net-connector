@@ -73,7 +73,7 @@ dotnet run
 
 ## What This Sample Demonstrates
 
-### 1. **Embedding Generation**
+### 1. **Automatic Embedding Generation**
 
 ```csharp
 // Define your data model with vector property
@@ -85,17 +85,26 @@ public class ProductRecord
     [VectorStoreData]
     public string Description { get; set; }
 
+    // Vector property must be a string that returns the source text
+    // This enables automatic embedding generation during upsert
     [VectorStoreVector(1024, DistanceFunction.CosineSimilarity)]
-    public ReadOnlyMemory<float>? DescriptionEmbedding { get; set; }
+    public string? DescriptionEmbedding => Description;
 }
 
-// Generate embeddings before upserting (required - not automatic)
-var embeddingResult = await embeddingGenerator.GenerateAsync([product.Description]);
-product.DescriptionEmbedding = embeddingResult[0].Vector;
+// Configure collection with embedding generator
+var collectionOptions = new MongoCollectionOptions
+{
+    EmbeddingGenerator = embeddingGenerator, // Will automatically generate embeddings during upsert
+    VectorIndexName = "product_vector_index"
+};
+
+var collection = new MongoCollection<string, ProductRecord>(database, "products", collectionOptions);
+
+// Embeddings are generated automatically during upsert!
 await collection.UpsertAsync(product);
 ```
 
-**Note:** The MongoDB vector store connector does not automatically generate embeddings during `UpsertAsync`. You must explicitly generate embeddings before saving documents. The `EmbeddingGenerator` in `MongoCollectionOptions` is used for search-time query embedding, not document insertion.
+**Important:** The vector property must be of type `string` (or `string?`) and return the source text to enable automatic embedding generation. The MongoDB connector will automatically call the `IEmbeddingGenerator` to create the vector embedding from this string value.
 
 ### 2. **Semantic Search**
 
