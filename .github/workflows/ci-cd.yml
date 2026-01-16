@@ -1,0 +1,168 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  PROJECT_PATH: 'src/Gravity9.MongoDb.VoyageAiEmbeddingGenerator/Gravity9.MongoDb.VoyageAiEmbeddingGenerator.csproj'
+  TEST_PROJECT_PATH: 'src/Gravity9.MongoDb.VoyageAiEmbeddingGenerator.Tests/Gravity9.MongoDb.VoyageAiEmbeddingGenerator.Tests.csproj'
+
+jobs:
+  calculate-version:
+    name: Calculate Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      should-publish: ${{ steps.version.outputs.should-publish }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for all tags
+
+      - name: Calculate version
+        id: version
+        shell: bash
+        run: |
+          # Get the latest tag from main branch
+          git fetch --tags
+          LATEST_TAG=$(git tag --sort=-v:refname | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+          
+          if [ -z "$LATEST_TAG" ]; then
+            # No tags exist, start with 1.0.0
+            MAJOR=1
+            MINOR=0
+            PATCH=0
+          else
+            # Remove 'v' prefix if present
+            VERSION=${LATEST_TAG#v}
+            
+            # Parse version parts
+            MAJOR=$(echo $VERSION | cut -d. -f1)
+            MINOR=$(echo $VERSION | cut -d. -f2)
+            PATCH=$(echo $VERSION | cut -d. -f3)
+          fi
+          
+          # Determine branch type
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          echo "Branch: $BRANCH_NAME"
+          
+          if [ "$BRANCH_NAME" = "main" ]; then
+            # Main branch: increment patch version
+            PATCH=$((PATCH + 1))
+            VERSION="$MAJOR.$MINOR.$PATCH"
+            SHOULD_PUBLISH="true"
+            echo "Main branch build - Version: $VERSION"
+          elif [[ "$BRANCH_NAME" == feature/* ]]; then
+            # Feature branch: use base version with -beta suffix
+            BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
+            VERSION="$MAJOR.$MINOR.$PATCH-beta$BUILD_NUMBER"
+            SHOULD_PUBLISH="true"
+            echo "Feature branch build - Version: $VERSION"
+          else
+            # PR or other branches: use base version with -preview suffix
+            BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
+            VERSION="$MAJOR.$MINOR.$PATCH-preview$BUILD_NUMBER"
+            SHOULD_PUBLISH="false"
+            echo "PR/Other branch build - Version: $VERSION (will not publish)"
+          fi
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "should-publish=$SHOULD_PUBLISH" >> $GITHUB_OUTPUT
+          echo "Calculated version: $VERSION"
+          echo "Should publish: $SHOULD_PUBLISH"
+
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    needs: calculate-version
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore /p:Version=${{ needs.calculate-version.outputs.version }}
+
+      - name: Run tests
+        run: dotnet test --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: '**/test-results.trx'
+
+      - name: Pack NuGet package
+        run: dotnet pack ${{ env.PROJECT_PATH }} --configuration Release --no-build /p:Version=${{ needs.calculate-version.outputs.version }} --output ./nupkg
+
+      - name: Upload NuGet package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-package
+          path: ./nupkg/*.nupkg
+
+  publish:
+    name: Publish to NuGet
+    runs-on: ubuntu-latest
+    needs: [calculate-version, build-and-test]
+    if: needs.calculate-version.outputs.should-publish == 'true' && github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download NuGet package
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-package
+          path: ./nupkg
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Publish to NuGet.org
+        run: dotnet nuget push ./nupkg/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+      - name: Create and push Git tag (main branch only)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          VERSION=${{ needs.calculate-version.outputs.version }}
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git tag -a "v$VERSION" -m "Release version $VERSION"
+          git push origin "v$VERSION"
+
+      # - name: Create GitHub Release (main branch only)
+      #   if: github.ref == 'refs/heads/main'
+      #   uses: actions/create-release@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     tag_name: v${{ needs.calculate-version.outputs.version }}
+      #     release_name: Release v${{ needs.calculate-version.outputs.version }}
+      #     body: |
+      #       Release version ${{ needs.calculate-version.outputs.version }}
+            
+      #       ## Changes
+      #       See commit history for details.
+      #     draft: false
+      #     prerelease: false
