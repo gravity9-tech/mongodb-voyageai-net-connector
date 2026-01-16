@@ -7,11 +7,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Title>VoyageAI Embedding Generator for MongoDB</Title>
-    <Description>Implementation of IEmbeddingGenerator using VoyageAI/MongoDB Atlas Embedding API for use with Semantic Kernel MongoDB vector store.</Description>
+    <Description>Implementation of IEmbeddingGenerator using VoyageAI/MongoDB Atlas Embedding API for use with Microsoft Agent Framework, Semantic Kernel, and any framework using Microsoft.Extensions.AI abstractions.</Description>
     <Authors>Gravity9</Authors>
-    <PackageTags>mongodb;voyageai;embedding;vector;semantic-kernel;ai</PackageTags>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/gravity9/MongoDb.VoyageAiEmbeddingGenerator</RepositoryUrl>
+    <PackageTags>mongodb;voyageai;embedding;vector;semantic-kernel;agent-framework;microsoft-extensions-ai;ai</PackageTags>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/gravity9-tech/mongodb-voyageai-net-connector</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
