@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Title>VoyageAI Embedding Generator for MongoDB</Title>
+    <Description>Implementation of IEmbeddingGenerator using VoyageAI/MongoDB Atlas Embedding API for use with Semantic Kernel MongoDB vector store.</Description>
+    <Authors>Gravity9</Authors>
+    <PackageTags>mongodb;voyageai;embedding;vector;semantic-kernel;ai</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/gravity9/MongoDb.VoyageAiEmbeddingGenerator</RepositoryUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="10.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.2" />
+  </ItemGroup>
+
+</Project>
