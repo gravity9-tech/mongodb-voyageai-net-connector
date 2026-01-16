@@ -1,6 +1,6 @@
 # Gravity9.MongoDb.VoyageAiEmbeddingGenerator
 
-A .NET library that implements `IEmbeddingGenerator<string, Embedding<float>>` using the [VoyageAI](https://www.mongodb.com/docs/api/doc/atlas-embedding-and-reranking-api/) embedding models through MongoDB Atlas AI API. This library integrates seamlessly with [Microsoft.Extensions.AI](https://learn.microsoft.com/en-us/dotnet/ai/microsoft-extensions-ai) abstractions, Microsoft Agent Framework, and Semantic Kernel's MongoDB vector store connector.
+A .NET library that implements `IEmbeddingGenerator<string, Embedding<float>>` using the [VoyageAI](https://www.mongodb.com/docs/api/doc/atlas-embedding-and-reranking-api/) embedding models through MongoDB Atlas AI API to the [Microsoft.Extensions.AI](https://learn.microsoft.com/en-us/dotnet/ai/microsoft-extensions-ai) abstractions, thus making it compatible with Microsoft Agent Framework, and Semantic Kernel's MongoDB vector store connector.
 
 [![NuGet](https://img.shields.io/nuget/v/Gravity9.MongoDb.VoyageAiEmbeddingGenerator.svg)](https://www.nuget.org/packages/Gravity9.MongoDb.VoyageAiEmbeddingGenerator/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
