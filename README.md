@@ -41,26 +41,6 @@ Install-Package Gravity9.MongoDb.VoyageAiEmbeddingGenerator
 
 ## Quick Start
 
-### Basic Usage
-
-```csharp
-using Gravity9.MongoDb.VoyageAiEmbeddingGenerator;
-
-// Create generator with API key
-var generator = new VoyageAiEmbeddingGenerator("your-mongodb-atlas-api-key");
-
-// Generate embeddings
-var texts = new[] { "Hello, world!", "Semantic search is powerful" };
-var result = await generator.GenerateAsync(texts);
-
-// Access embeddings
-foreach (var embedding in result)
-{
-    Console.WriteLine($"Embedding dimensions: {embedding.Vector.Length}");
-    // Process embedding vector...
-}
-```
-
 ### With Dependency Injection
 
 ```csharp
@@ -359,5 +339,3 @@ Learn more:
 - [Microsoft.Extensions.AI Announcement](https://devblogs.microsoft.com/dotnet/introducing-microsoft-extensions-ai-preview/)
 - [Microsoft.Extensions.AI on NuGet](https://www.nuget.org/packages/Microsoft.Extensions.AI.Abstractions/)
 - [Microsoft.Extensions.AI GitHub](https://github.com/dotnet/extensions/tree/main/src/Libraries/Microsoft.Extensions.AI.Abstractions)
-
-## Documentation
