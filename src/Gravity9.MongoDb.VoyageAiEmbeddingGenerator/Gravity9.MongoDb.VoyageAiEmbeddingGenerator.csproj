@@ -12,7 +12,12 @@
     <PackageTags>mongodb;voyageai;embedding;vector;semantic-kernel;agent-framework;microsoft-extensions-ai;ai</PackageTags>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/gravity9-tech/mongodb-voyageai-net-connector</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="10.2.0" />
