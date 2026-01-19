@@ -13,7 +13,7 @@ public class VoyageAiEmbeddingGeneratorOptionsTests
         var options = new VoyageAiEmbeddingGeneratorOptions();
 
         // Assert
-        options.BaseUrl.Should().Be("https://ai.mongodb.com/v1");
+        options.BaseUrl.Should().Be("https://ai.mongodb.com/v1/");
         options.Model.Should().Be("voyage-4-large");
         options.Truncation.Should().BeTrue();
         options.OutputDtype.Should().Be("float");
